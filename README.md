@@ -21,5 +21,5 @@ An arcade card management app for Android!
 ## Release Build
 - Generate a keystore with `Generate Keystore.bat {filename} {alias}`
 - Fill out the information it prompts
-- Run `dotnet publish -f net8.0-android -c Release -p:AndroidKeyStore=true -p:AndroidSigningKeyStore={filename}.keystore -p:AndroidSigningKeyAlias={alias} -p:AndroidSigningKeyPass={password} -p:AndroidSigningStorePass={password}`
+- Run `dotnet publish -f net8.0-android -c Release -p:AndroidKeyStore=true -p:AndroidSigningKeyStore={filename}.keystore -p:AndroidSigningKeyAlias={alias} -p:AndroidSigningKeyPass={password} -p:AndroidSigningStorePass={password}` from the `App` folder
 - A signed and non signed APK will be in `./App/bin/Release/net8.0-android/publish`
