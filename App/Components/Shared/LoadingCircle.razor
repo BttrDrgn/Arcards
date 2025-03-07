@@ -1,0 +1,18 @@
+﻿@if (AdditionalAttributes != null && AdditionalAttributes.ContainsKey("class"))
+{
+    <div class="@($"{AdditionalAttributes["class"]} d-flex justify-content-center")">
+        <span class="spinner-border spinner-border-lg a-text-primary" style="width: @(Size)rem; height: @(Size)rem;" role="status" aria-hidden="true"></span>
+    </div>
+}
+else
+{
+    <div class="d-flex justify-content-center">
+        <span class="spinner-border spinner-border-lg a-text-primary" style="width: @(Size)rem; height: @(Size)rem;" role="status" aria-hidden="true"></span>
+    </div>
+}
+
+@code {
+    [Parameter] public double Size { get; set; } = 4.0;
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object> AdditionalAttributes { get; set; }
+
+}

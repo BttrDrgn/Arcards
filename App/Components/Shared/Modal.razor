@@ -1,0 +1,75 @@
+@inherits ComponentBase
+
+<div class="modal" style="@GetModalStyle()">
+    <div class="modal-backdrop" style="background-color: rgba(0, 0, 0, 0)" @onclick="BackgroundClick">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content" style="background-color: var(--clr-primary);">
+                
+                @if (!string.IsNullOrEmpty(Title))
+                {
+                    <div class="modal-header border-0" style="background-color: var(--clr-primary-800);">
+                        <h5 class="modal-title a-text-primary-400">@Title</h5>
+                        @if (ShowX)
+                        {
+                            <button class="btn a-btn-primary close" type="button" @onclick="HideModal">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        }
+                    </div>
+                }
+
+                <div class="modal-body">
+                    @ChildContent
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@if (Show)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    private bool _show;
+
+    [Parameter]
+    public bool Show
+    {
+        get => _show;
+        set
+        {
+            if (_show != value)
+            {
+                _show = value;
+                ShowChanged.InvokeAsync(value);
+            }
+        }
+    }
+
+    [Parameter] public string Title { get; set; }
+    [Parameter] public RenderFragment ChildContent { get; set; }
+    [Parameter] public bool ShowX { get; set; } = true;
+    [Parameter] public bool Dismissable { get; set; } = true;
+
+    [Parameter]
+    public EventCallback<bool> ShowChanged { get; set; }
+
+    private void HideModal()
+    {
+        Show = false;
+    }
+
+    private void BackgroundClick()
+    {
+        if (Dismissable) HideModal();
+    }
+
+    private string GetModalStyle()
+    {
+        return Show ? "display: block;" : "display: none;";
+    }
+}

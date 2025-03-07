@@ -1,0 +1,273 @@
+﻿@page "/"
+@page "/cards"
+@implements IDisposable
+@inject NFCService NFC
+@inject LocalizationService LocService
+@inject IFeliCa FeliCa
+@using System.Text.RegularExpressions;
+@using Newtonsoft.Json;
+
+<div class="container-fluid p-4" style="overflow-y: hidden; height: 100%; position: fixed">
+
+    @if (NewCard != null)
+    {
+        <Modal @bind-Show="ShowNewCardModal" ShowX=false Dismissable=false>
+            <div class="text-center justify-content-center">
+                <CardEntry Card="NewCard"/>
+
+                <ul>
+                    <label for="cardType" class="me-2">Card Type:</label>
+                    <select id="cardType" @bind="@NewCard.CardType">
+                        @foreach (var type in Enum.GetValues(typeof(CardType)).Cast<CardType>())
+                        {
+                            <option value="@type.ToString()">@(Regex.Replace(type.ToString(), "([a-z])([A-Z])", "$1 $2"))</option>
+                        }
+                    </select>
+                </ul>
+
+                
+                <div class="row mt-5">
+                    <button class="col btn a-btn-primary-400 pe-0 ps-0 ms-5 me-5" @onclick="AcceptNewCard">Add</button>
+                    <button class="col btn a-btn-primary-400 pe-0 ps-0 me-5 ms-5" @onclick="CloseNewCardModal">Close</button>
+                </div>
+            </div>
+        </Modal>
+
+        <Modal @bind-Show="ShowReadyModal" Title="Ready To Scan" ShowX=true Dismissable=true>
+            <div class="text-center justify-content-center">
+                <CardEntry Card="NewCard" />
+                <button class="btn a-btn-primary-700 mt-5" @onclick="DeleteCard">Delete Card</button>
+            </div>
+        </Modal>
+
+        <Modal @bind-Show="ShowGenerateModal" Title="Generate Card" ShowX=false Dismissable=false>
+            <div class="text-center justify-content-center">
+                <CardEntry Card="NewCard" ShowInfo=false/>
+
+                <div class="container">
+                    <div>
+                        <ul style="padding: 0px; margin: 0px;">
+                            <label for="cardType" class="me-2">Card Type:</label>
+                            <select id="cardType" @onchange="ChangeCardType">
+                                @foreach (var type in GenerateableCard)
+                                {
+                                    @if (type == GenerateableCard[0])
+                                    {
+                                        <option selected value="@type.ToString()">@(Regex.Replace(type.ToString(), "([a-z])([A-Z])", "$1 $2"))</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@type.ToString()">@(Regex.Replace(type.ToString(), "([a-z])([A-Z])", "$1 $2"))</option>
+                                    }
+                                }
+                            </select>
+                        </ul>
+                    </div>
+
+                    <div class="mt-3">
+                        <label for="cardId" style="padding: 0px; margin: 0px">Card ID:</label>
+                        <input id="cardId" size="16" @bind="NewCard.Serial" />
+                        @if (NewCard.CardType == CardType.Eamuse || NewCard.CardType == CardType.EamuseIC)
+                        {
+                            <button class="btn a-btn-primary-400 mt-2" @onclick="Randomize">Randomize</button>
+                        }
+                    </div>
+                    
+                </div>
+
+                <div class="row mt-4">
+                    <button class="col btn a-btn-primary-400 pe-0 ps-0 ms-5 me-5" @onclick="AcceptNewCard">Add</button>
+                    <button class="col btn a-btn-primary-400 pe-0 ps-0 me-5 ms-5" @onclick="CloseNewCardModal">Close</button>
+                </div>
+            </div>
+        </Modal>
+    }
+
+    <h1 class="a-page-header">Cards <button class="btn a-btn-primary-400 ms-5" @onclick="GenerateNewCard">Generate Card</button></h1>
+
+    <div class="container a-bg-primary rounded shadow-sm mt-3" style="max-height: 36rem; overflow-y: scroll">
+        <div class="list-group">
+            @for (int i = 0; i < CardList.Count(); ++i)
+            {
+                <CardEntry Card="CardList[i]" OnCardTapped="CardTapped"/>
+            }
+         </div>
+    </div>
+
+</div>
+
+@code {
+    public List<Card> CardList;
+    public Card NewCard;
+    public bool ShowNewCardModal = false;
+    public bool ShowReadyModal = false;
+    public bool ShowGenerateModal = false;
+    public List<CardType> GenerateableCard = new List<CardType>()
+    {
+        CardType.Eamuse,
+        CardType.EamuseIC,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IO.Exists("cards.json"))
+        {
+            try
+            {
+                CardList = JsonConvert.DeserializeObject<List<Card>>(IO.ReadFile("cards.json"));
+            }
+            catch (Exception ex)
+            {
+                CardList = new List<Card>();
+                Dev.ErrorLog(ex.Message);
+            }
+        }
+        else
+        {
+            CardList = new List<Card>();
+        }
+
+        NFC.StartListening();
+
+        NFC.OnRead += Read;
+
+        await base.OnInitializedAsync();
+    }
+
+    public async Task Read(ITagInfo tag)
+    {
+        if (tag == null) return;
+
+        Card card = new Card();
+        card.Serial = tag.SerialNumber;
+        card.CardType = Card.DetermineCardType(card);
+        string konamiId = null;
+
+        Dev.InfoLog("Scanned Card");
+        Dev.InfoLog($"Serial: {card.Serial}");
+        Dev.InfoLog($"Capacity: {tag.Capacity}");
+        Dev.InfoLog($"Card Type: {card.CardType}");
+
+        if (card.CardType == CardType.Eamuse || card.CardType == CardType.EamuseIC)
+        {
+            konamiId = Eamuse.ToKonamiId(card.Serial);
+        }
+        else if (card.CardType == CardType.DaveAndBusters)
+        {
+            Dev.InfoLog(Convert.ToBase64String(tag.Data));
+        }
+
+        if (!string.IsNullOrEmpty(konamiId)) card.KonamiID = konamiId;
+
+        NewCard = card;
+        ShowNewCardModal = true;
+
+        StateHasChanged();
+    }
+
+    void GenerateNewCard()
+    {
+        NewCard = new Card();
+        NewCard.CardType = GenerateableCard[0];
+        ShowGenerateModal = true;
+        StateHasChanged();
+    }
+
+    void CloseNewCardModal()
+    {
+        NewCard = null;
+        ShowNewCardModal = false;
+        ShowGenerateModal = false;
+        StateHasChanged();
+    }
+
+    void AcceptNewCard()
+    {
+        if (NewCard.CardType == CardType.Eamuse || NewCard.CardType == CardType.EamuseIC)
+        {
+            if (!NewCard.Serial.StartsWith("0"))
+            {
+                NewCard.KonamiID = NewCard.Serial;
+                NewCard.Serial = Eamuse.ToUid(NewCard.Serial);
+            }
+        }
+
+        CardList.Add(NewCard);
+
+        try
+        {
+            var newCardJson = JsonConvert.SerializeObject(CardList);
+            IO.WriteFile("cards.json", newCardJson);
+        }
+        catch (Exception ex)
+        {
+            Dev.ErrorLog(ex.Message);
+        }
+
+        NewCard = null;
+        ShowNewCardModal = false;
+        ShowGenerateModal = false;
+
+
+        StateHasChanged();
+    }
+
+    void DeleteCard()
+    {
+        CardList.Remove(NewCard);
+
+        try
+        {
+            var newCardJson = JsonConvert.SerializeObject(CardList);
+            IO.WriteFile("cards.json", newCardJson);
+        }
+        catch (Exception ex)
+        {
+            Dev.ErrorLog(ex.Message);
+        }
+
+        ShowNewCardModal = false;
+        ShowGenerateModal = false;
+
+        NewCard = null;
+    }
+
+    void ChangeCardType(ChangeEventArgs e)
+    {
+        NewCard.Serial = "";
+        NewCard.KonamiID = "";
+
+        NewCard.CardType = (CardType)Enum.Parse(typeof(CardType), e.Value.ToString().Replace(' ', '\0'));
+        StateHasChanged();
+    }
+
+    void Randomize()
+    {
+        switch(NewCard.CardType)
+        {
+            case CardType.Eamuse:
+            case CardType.EamuseIC:
+                NewCard.Serial = Eamuse.GenerateRandomCard();
+                NewCard.KonamiID = Eamuse.ToKonamiId(NewCard.Serial);
+                break;
+        }
+    }
+
+    void CardTapped(Card card)
+    {
+        if (card.CardType == CardType.Eamuse || card.CardType == CardType.EamuseIC)
+        {
+            FeliCa.SetNfcId2(card.Serial);
+            NewCard = card;
+            ShowReadyModal = true;
+            StateHasChanged();
+        }
+    }
+
+    void IDisposable.Dispose()
+    {
+        NFC.StopListening();
+
+        NFC.OnRead -= Read;
+    }
+}

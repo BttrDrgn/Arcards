@@ -1,0 +1,39 @@
+﻿@inherits LayoutComponentBase
+@inject NFCService NFC
+@inject LocalizationService Loc
+@inject NavigationManager NavManager
+
+<div class="page">
+    <ErrorBoundary>
+        <ChildContent>
+            <main>
+                @Body
+            </main>
+        </ChildContent>
+        <ErrorContent Context="ex">
+            <main>
+                @Body
+            </main>
+
+            <Modal @bind-Show="@ShowErrorModal" Title="Error">
+                <p>@ex.Message</p>
+            </Modal>
+        </ErrorContent>
+    </ErrorBoundary>
+
+    <div style="padding-top: 5rem" />
+
+    <NavMenu />
+</div>
+
+@code {
+    public bool ShowErrorModal = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        NFC.Initialize();
+        await Loc.SetLanguage("en-US");
+        await base.OnInitializedAsync();
+        //NavManager.NavigateTo("/cards");
+    }
+}

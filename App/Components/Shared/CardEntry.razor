@@ -1,0 +1,39 @@
+﻿<a class="list-group-item list-group-item-action mb-3 rounded border-0 btn" style="background-color: rgba(0, 0, 0, 0);" @onclick="() => { if(OnCardTapped != null) OnCardTapped(Card); }">
+    <div class="text-center">
+        <img class="img-fluid rounded mt-3" src="@GetDefaultImage(Card.CardType)" style="width: 15rem" />
+
+        @if (ShowInfo)
+        {
+            @if (Card.CardType == CardType.Eamuse || Card.CardType == CardType.EamuseIC)
+            {
+                <p class="mb-0" style="color: white">@Card.KonamiID</p>
+            }
+            else if(Card.CardType == CardType.DaveAndBusters)
+            {
+                <p class="mb-0" style="color: white">@Card.Serial</p>
+            }
+            else if (Card.CardType == CardType.Unknown)
+            {
+                <p class="mb-0" style="color: white">Unknown Card</p>
+            }
+        }
+    </div>
+</a>
+
+@code {
+    [Parameter] public Card Card { get; set; }
+    [Parameter] public bool ShowInfo { get; set; } = true;
+    [Parameter] public Action<Card> OnCardTapped { get; set; }
+    public string GetDefaultImage(CardType type)
+    {
+        switch(type)
+        {
+            case CardType.Eamuse: return "imgs/cards/eamuse.png";
+            case CardType.EamuseIC: return "imgs/cards/eamuse_ic.png";
+            case CardType.AIME: return "imgs/cards/aime.png";
+            case CardType.DaveAndBusters: return "imgs/cards/power_card.png";
+        }
+
+        return "imgs/cards/template.png";
+    }
+}

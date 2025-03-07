@@ -1,0 +1,45 @@
+﻿@inject LocalizationService LocService
+
+@* No pages yet, dont do the navbar *@
+@if (Render && Env.IsDebug())
+{
+    <nav class="a-navbar fixed-bottom">
+        <div class="container-fluid">
+            <div class="row text-center pt-2 pb-2">
+
+                <div class="col text-center a-nav-item">
+                    <NavLink class="nav-link d-flex flex-column justify-content-center align-items-center" href="/cards">
+                        <i class="bi bi-wallet a-nav-icon"></i> <span class="a-nav-text">@LocService.Localization.NavCards</span>
+                    </NavLink>
+                </div>
+
+                @* <div class="col text-center a-nav-item">
+                    <NavLink class="nav-link d-flex flex-column justify-content-center align-items-center" href="/settings">
+                        <i class="bi bi-gear a-nav-icon"></i> <span class="a-nav-text">@LocService.Localization.NavSettings</span>
+                    </NavLink>
+                </div> *@
+
+                @if (Env.IsDebug())
+                {
+                    <div class="col text-center a-nav-item">
+                        <NavLink class="nav-link d-flex flex-column justify-content-center align-items-center" href="/debug">
+                            <i class="bi bi-code-slash a-nav-icon"></i> <span class="a-nav-text">@LocService.Localization.NavDebug</span>
+                        </NavLink>
+                    </div>
+                }
+            </div>
+        </div>
+    </nav>
+}
+
+@code {
+    public bool Render = false;
+    public bool Disabled = false;
+
+    protected override void OnInitialized()
+    {
+        Render = true;
+        StateHasChanged();
+        base.OnInitialized();
+    }
+}

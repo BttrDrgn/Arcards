@@ -1,0 +1,35 @@
+
+
+.a-nav-icon {
+    font-size: 1.25rem;
+}
+
+.a-nav-text {
+    font-size: 1rem;
+    font-weight: 900;
+}
+
+.a-nav-item {
+    border-right: none;
+    color: var(--clr-primary-300);
+}
+
+.a-nav-item:last-of-type {
+    border-right: none;
+}
+
+.a-nav-item ::deep a.active {
+    color: var(--clr-secondary-50);
+    background-color: var(--clr-primary);
+}
+
+.a-nav-item ::deep :not(a.actvie) {
+}
+
+/*Mobile*/
+@media (max-width: 640.98px) {
+}
+
+/*Desktop*/
+@media (min-width: 641px) {
+}

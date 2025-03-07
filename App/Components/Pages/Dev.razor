@@ -1,0 +1,160 @@
+﻿@page "/debug"
+@implements IDisposable
+@inject LocalizationService LocService
+@inject NavigationManager NavManager
+﻿@using System.Diagnostics;
+
+@if (Env.IsDebug())
+{
+    <div class="container-fluid p-4">
+        <h1 class="a-page-header">Debug</h1>
+        <div class="container shadow console" style="background-color: rgb(26, 18, 31)">
+            @foreach (var line in Output)
+            {
+                <p>@line</p>
+            }
+        </div>
+        <input class="form-contorl input-field mt-3" type="text" id="buffer" @bind-value="@Buffer"/>
+        <button class="btn a-btn-primary" @onclick="Execute">Send</button>
+    </div>
+}
+
+@code {
+    public class Command
+    {
+        public string Name { get; set; }
+        public string Help { get; set; }
+        public Action<string[]> Callback { get; set; }
+
+        public Command(string name, string help, Action<string[]> callback)
+        {
+            Name = name;
+            Help = help;
+            Callback = callback;
+        }
+    }
+
+    public static List<string> Output = new List<string>();
+    public static List<Command> Commands = null;
+    public static string Buffer = "";
+    public static Callback OutputUpdateCallbacks = new Callback();
+    public CallbackAction OutputUpdateCallback = null;
+    public static bool ShowDebug = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Env.IsDebug()) return;
+
+        if(Commands == null)
+        {
+            Commands = new List<Command>();
+
+            Commands.Add(new Command("help", "usage: help <command:string>", (args) =>
+            {
+                if (args.Count() == 1)
+                {
+                    foreach(var c in Commands)
+                    {
+                        Dev.InfoLog(c.Name);
+                    }
+                }
+                else if (args.Count() == 2)
+                {
+                    string find = args[1].ToLower();
+                    foreach (var c in Commands)
+                    {
+                        if (c.Name.ToLower() == find)
+                        {
+                            Dev.InfoLog($"{c.Name} : {c.Help}");
+                        }
+                    }
+                }
+                else
+                {
+                    Dev.InfoLog("usage: help <command:string>");
+                }
+            }));
+
+            Commands.Add(new Command("loc", "usage: loc (loc:string)", (args) =>
+            {
+                if(args.Count() == 2)
+                {
+                    _ = LocService.SetLanguage(args[1]);
+                }
+                else
+                {
+                    Dev.InfoLog("usage: loc (loc:string)");
+                }
+            }));
+        }
+
+        OutputUpdateCallback = OutputUpdateCallbacks.Register(Update);
+        await base.OnInitializedAsync();
+    }
+
+    void IDisposable.Dispose()
+    {
+        if (!Env.IsDebug()) return;
+        OutputUpdateCallbacks.Delete(OutputUpdateCallback);
+    }
+
+    public void Update()
+    {
+        if (!Env.IsDebug()) return;
+        StateHasChanged();
+    }
+
+    public static void WriteLine(string prefix, string message)
+    {
+        if(!Env.IsDebug()) return;
+        Output.Add($"[ {prefix} ]: {message}");
+        OutputUpdateCallbacks.Run();
+    }
+
+    public static void Execute()
+    {
+        if (!Env.IsDebug()) return;
+        InfoLog($"> {Buffer}");
+
+        string cmd = "";
+
+        var split = Buffer.Split(" ");
+        if (split.Length > 0) cmd = split[0];
+        else split = new string[1] { Buffer };
+
+        bool found = false;
+        foreach (var c in Commands)
+        {
+            if (c.Name.ToLower() == cmd.ToLower())
+            {
+                c.Callback.Invoke(split);
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) ErrorLog($"err: command \"{cmd}\" not found");
+
+        Buffer = "";
+    }
+
+    public static void InfoLog(string message)
+    {
+        WriteLine("INFO", message);
+    }
+
+    public static void WarningLog(string message)
+    {
+        WriteLine("Warning", message);
+    }
+
+    public static void ErrorLog(string message)
+    {
+        WriteLine("ERROR", message);
+    }
+
+    public static void DebugLog(string message)
+    {
+        WriteLine("DEBUG", message);
+    }
+}

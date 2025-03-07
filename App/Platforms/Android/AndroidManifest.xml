@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.drgn.arcards">
+	
+	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:supportsRtl="true" android:label="Arcards"></application>
+
+	<uses-feature android:name ="android.hardware.nfc.hcef" android:required="true"/>
+	<uses-feature android:name="android.hardware.nfc" android:required="true" />
+	<uses-permission android:name="android.permission.NFC" />
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+	<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+</manifest>

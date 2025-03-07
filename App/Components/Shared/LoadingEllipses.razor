@@ -1,0 +1,27 @@
+﻿@if (AdditionalAttributes != null && AdditionalAttributes.ContainsKey("class"))
+{
+    <div class="@($"{AdditionalAttributes["class"]} d-flex justify-content-center")">
+        @for (int i = 0; i < Count; ++i)
+        {
+            <span class="spinner-grow a-text-primary" style="width: @(Size)rem; height: @(Size)rem; animation-duration: @(Duration)s; animation-delay: @(0.25 * i)s; animation-timing-function: ease-in-out" role="status" aria-hidden="true"></span>
+        }
+    </div>
+}
+else
+{
+    <div class="d-flex justify-content-center">
+        @for (int i = 0; i < Count; ++i)
+        {
+            <span class="spinner-grow a-text-primary" style="width: @(Size)rem; height: @(Size)rem; animation-duration: @(Duration)s; animation-delay: @(0.25 * i)s; animation-timing-function: ease-in-out" role="status" aria-hidden="true"></span>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public double Size { get; set; } = 4.0;
+
+    //In seconds
+    [Parameter] public double Duration { get; set; } = 1.0;
+    [Parameter] public int Count { get; set; } = 3;
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object> AdditionalAttributes { get; set; }
+}
