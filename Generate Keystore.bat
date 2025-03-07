@@ -16,4 +16,5 @@ SET filename=%1
 SET alias=%2
 
 REM Run the keytool command
+cd App
 keytool -genkeypair -v -keystore %filename%.keystore -alias %alias% -keyalg RSA -keysize 2048 -validity 10000
